@@ -15,9 +15,9 @@ final class TrackersViewController: UIViewController {
     }()
     
     private var trackers: [Tracker] = []
-    private var trackersForToday: [Tracker] = []
     private var categories: [TrackerCategory] = []
     private var completedTrackers: Set<TrackerRecord> = []
+    private var filteredCategories: [TrackerCategory] = []
     
     private var currentDate = Date()
     private var selectedDate: Date?
@@ -158,6 +158,9 @@ final class TrackersViewController: UIViewController {
         trackerCollectionView.translatesAutoresizingMaskIntoConstraints = false
         
         trackerCollectionView.register(TrackerViewCell.self, forCellWithReuseIdentifier: TrackerViewCell.identifier)
+        trackerCollectionView.register(CategoryHeaderView.self,
+                                       forSupplementaryViewOfKind: UICollectionView.elementKindSectionHeader,
+                                       withReuseIdentifier: CategoryHeaderView.reuseIdentifier)
         
         trackerCollectionView.delegate = self
         trackerCollectionView.dataSource = self
@@ -216,17 +219,33 @@ final class TrackersViewController: UIViewController {
         trackerCollectionView.bottomAnchor.constraint(equalTo: view.safeAreaLayoutGuide.bottomAnchor).isActive = true
     }
     
-    private func updateTrackersForDate(date: Date) {
-        guard let currentWeekday = Calendar.current.getWeekday(from: date) else { return }
+    // MARK: - Filtering
+    
+    private func filteredTrackers(for date: Date) -> [TrackerCategory] {
+        guard let currentWeekday = Calendar.current.getWeekday(from: date) else { return [] }
         
-        trackersForToday = trackers.filter { tracker in
-            tracker.schedule.contains(currentWeekday)
+        let filtered = categories.compactMap { category -> TrackerCategory? in
+            let trackers = category.trackers.filter { tracker in
+                tracker.schedule.contains(currentWeekday)
+            }
+            if trackers.isEmpty {
+                return nil
+            }
+            return TrackerCategory(title: category.title, trackers: trackers)
         }
-        let isEmpty = trackersForToday.isEmpty
         
+        return filtered
+    }
+    
+    private func updateTrackersForDate(date: Date) {
+        filteredCategories = filteredTrackers(for: date)
+        
+        let isEmpty = filteredCategories.isEmpty
         errorImageView.isHidden = !isEmpty
         whatTrackLabel.isHidden = !isEmpty
         trackerCollectionView.isHidden = isEmpty
+        
+        trackerCollectionView.reloadData()
     }
     
     private func reoladCollectionView() {
@@ -288,28 +307,58 @@ final class TrackersViewController: UIViewController {
 // MARK: - UICollectionViewDataSource
 
 extension TrackersViewController: UICollectionViewDataSource {
+    func numberOfSections(in collectionView: UICollectionView) -> Int {
+        return filteredCategories.count
+    }
+    
     func collectionView(_ collectionView: UICollectionView, numberOfItemsInSection section: Int) -> Int {
-        return trackersForToday.count
+        return filteredCategories[section].trackers.count
     }
     
     func collectionView(_ collectionView: UICollectionView, cellForItemAt indexPath: IndexPath) -> UICollectionViewCell {
         guard let cell = trackerCollectionView.dequeueReusableCell(
-            withReuseIdentifier: TrackerViewCell.identifier, for: indexPath) as? TrackerViewCell else {
+            withReuseIdentifier: TrackerViewCell.identifier,
+            for: indexPath
+        ) as? TrackerViewCell else {
             return UICollectionViewCell()
         }
         
-        let tracker = trackersForToday[indexPath.row]
+        let tracker = filteredCategories[indexPath.section].trackers[indexPath.row]
+        let date = selectedDate ?? currentDate
+        
         cell.delegate = self
-        cell.configure(id: tracker.id,
-                       selectedDate: selectedDate?.startOfDay ?? currentDate.startOfDay,
-                       title: tracker.name,
-                       emoji: tracker.emoji,
-                       color: tracker.color,
-                       days: completedDaysCount(for: tracker.id),
-                       completed: isTrackerCompleted(id: tracker.id, on: selectedDate ?? currentDate))
+        cell.configure(
+            id: tracker.id,
+            selectedDate: date.startOfDay,
+            title: tracker.name,
+            emoji: tracker.emoji,
+            color: tracker.color,
+            days: completedDaysCount(for: tracker.id),
+            completed: isTrackerCompleted(id: tracker.id, on: date)
+        )
         return cell
     }
     
+    func collectionView(
+        _ collectionView: UICollectionView,
+        viewForSupplementaryElementOfKind kind: String,
+        at indexPath: IndexPath
+    ) -> UICollectionReusableView {
+        guard kind == UICollectionView.elementKindSectionHeader else {
+            return UICollectionReusableView()
+        }
+        
+        guard let header = collectionView.dequeueReusableSupplementaryView(
+            ofKind: kind,
+            withReuseIdentifier: CategoryHeaderView.reuseIdentifier,
+            for: indexPath
+        ) as? CategoryHeaderView else {
+            return UICollectionReusableView()
+        }
+        
+        header.configure(title: filteredCategories[indexPath.section].title)
+        return header
+    }
 }
 
 // MARK: - UICollectionViewDelegateFlowLayout
@@ -336,6 +385,14 @@ extension TrackersViewController: UICollectionViewDelegateFlowLayout {
     // Расстояния между ячейками внутри коллекции - горизонтальные отступы
     func collectionView(_ collectionView: UICollectionView, layout collectionViewLayout: UICollectionViewLayout, minimumInteritemSpacingForSectionAt section: Int) -> CGFloat {
         return params.cellSpacing
+    }
+    
+    func collectionView(_ collectionView: UICollectionView, layout collectionViewLayout: UICollectionViewLayout, referenceSizeForHeaderInSection section: Int) -> CGSize {
+        let header = CategoryHeaderView(frame: .zero)
+        header.configure(title: "Домашний уют")
+        return header.systemLayoutSizeFitting(CGSize(width: collectionView.frame.width,
+                                                     height: UIView.layoutFittingCompressedSize.height)
+        )
     }
 }
 
@@ -374,5 +431,13 @@ extension TrackersViewController {
                     emoji: "🐈‍⬛",
                     schedule: [.monday, .wednesday, .friday, .sunday])
         ])
+        
+        categories.append(contentsOf: [
+            TrackerCategory(title: "Домашний уют",
+                            trackers: [trackers[0]]),
+            TrackerCategory(title: "Радостные мелочи",
+                            trackers: [trackers[1], trackers[2]])
+        ])
+        
     }
 }
