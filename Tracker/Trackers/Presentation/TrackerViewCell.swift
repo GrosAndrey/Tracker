@@ -184,6 +184,9 @@ final class TrackerViewCell: UICollectionViewCell {
     private func didTapCompleteButton() {
         isCompleted.toggle()
         guard let trackerID, let trackerDate else { return }
+        if trackerDate.startOfDay > Date().startOfDay {
+            return
+        }
         
         if isCompleted {
             completedDays += 1

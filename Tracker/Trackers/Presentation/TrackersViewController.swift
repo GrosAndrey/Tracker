@@ -15,10 +15,11 @@ final class TrackersViewController: UIViewController {
     }()
     
     private var trackers: [Tracker] = []
+    private var trackersForToday: [Tracker] = []
     private var categories: [TrackerCategory] = []
     private var completedTrackers: Set<TrackerRecord> = []
     
-    private var currentDate = Date().startOfDay
+    private var currentDate = Date()
     private var selectedDate: Date?
     private var params: GeometricParams = GeometricParams(cellCount: 2,
                                                           leftInset: 16,
@@ -48,6 +49,7 @@ final class TrackersViewController: UIViewController {
         
         mockData()
         configure()
+        updateTrackersForDate(date: currentDate)
     }
     
     // MARK: - Configure
@@ -215,6 +217,19 @@ final class TrackersViewController: UIViewController {
     }
     
     private func updateTrackersForDate(date: Date) {
+        guard let currentWeekday = Calendar.current.getWeekday(from: date) else { return }
+        
+        trackersForToday = trackers.filter { tracker in
+            tracker.schedule.contains(currentWeekday)
+        }
+        let isEmpty = trackersForToday.isEmpty
+        
+        errorImageView.isHidden = !isEmpty
+        whatTrackLabel.isHidden = !isEmpty
+        trackerCollectionView.isHidden = isEmpty
+    }
+    
+    private func reoladCollectionView() {
         trackerCollectionView.reloadData()
     }
     
@@ -263,10 +278,10 @@ final class TrackersViewController: UIViewController {
     
     @objc private func dateChanged(_ sender: UIDatePicker) {
         dateLabel.text = dateFormatter.string(from: sender.date)
-        let normalizedDate = sender.date.startOfDay
-        selectedDate = normalizedDate
+        selectedDate = sender.date
         
-        updateTrackersForDate(date: normalizedDate)
+        updateTrackersForDate(date: sender.date)
+        reoladCollectionView()
     }
 }
 
@@ -274,7 +289,7 @@ final class TrackersViewController: UIViewController {
 
 extension TrackersViewController: UICollectionViewDataSource {
     func collectionView(_ collectionView: UICollectionView, numberOfItemsInSection section: Int) -> Int {
-        return trackers.count
+        return trackersForToday.count
     }
     
     func collectionView(_ collectionView: UICollectionView, cellForItemAt indexPath: IndexPath) -> UICollectionViewCell {
@@ -283,10 +298,10 @@ extension TrackersViewController: UICollectionViewDataSource {
             return UICollectionViewCell()
         }
         
-        let tracker = trackers[indexPath.row]
+        let tracker = trackersForToday[indexPath.row]
         cell.delegate = self
         cell.configure(id: tracker.id,
-                       selectedDate: selectedDate ?? currentDate,
+                       selectedDate: selectedDate?.startOfDay ?? currentDate.startOfDay,
                        title: tracker.name,
                        emoji: tracker.emoji,
                        color: tracker.color,
@@ -345,9 +360,19 @@ extension TrackersViewController {
         trackers.append(contentsOf: [
             Tracker(id: UUID(),
                     name: "Поливать растения",
-                    color: DSColor.ypGreen,
+                    color: .systemGreen,
                     emoji: "🌱",
-                    schedule: [.monday, .friday])
+                    schedule: [.monday, .friday]),
+            Tracker(id: UUID(),
+                    name: "Сделать зарядку",
+                    color: .systemYellow,
+                    emoji: "🏋️‍♀️",
+                    schedule: [.monday, .tuesday, .wednesday, .thursday, .friday, .saturday, .sunday]),
+            Tracker(id: UUID(),
+                    name: "Покормить кота",
+                    color: .systemPink,
+                    emoji: "🐈‍⬛",
+                    schedule: [.monday, .wednesday, .friday, .sunday])
         ])
     }
 }

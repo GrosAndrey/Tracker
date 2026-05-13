@@ -14,3 +14,11 @@ extension Date {
         return calendar.startOfDay(for: self)
     }
 }
+
+extension Calendar {
+    func getWeekday(from date: Date) -> Weekday? {
+        let appleWeekday = self.component(.weekday, from: date)
+        let number = appleWeekday == 1 ? 7 : appleWeekday - 1
+        return Weekday(rawValue: number)
+    }
+}
