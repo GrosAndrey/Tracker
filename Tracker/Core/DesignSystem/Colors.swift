@@ -57,4 +57,12 @@ enum DSColor {
         return color
     }
     
+    static var ypGreen: UIColor {
+        guard let color = UIColor(named: "YP_green") else {
+            assertionFailure("Color YP_green not found")
+            return .systemGreen
+        }
+        return color
+    }
+    
 }
