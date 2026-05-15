@@ -19,6 +19,7 @@ final class CreateTrackerViewController: UIViewController {
     
     // MARK: - Properties
     private let options = ["Категория", "Расписание"]
+    private var currentSchedule: Set<Weekday> = []
     
     // MARK: - Lifecycle
     override func viewDidLoad() {
@@ -61,6 +62,9 @@ final class CreateTrackerViewController: UIViewController {
         nameTextField.leftViewMode = .always
         
         nameTextField.translatesAutoresizingMaskIntoConstraints = false
+        
+        nameTextField.addTarget(self, action: #selector(editTextChanged), for: .editingChanged)
+        nameTextField.delegate = self
     }
     
     private func configureTableView() {
@@ -69,7 +73,6 @@ final class CreateTrackerViewController: UIViewController {
         optionsTableView.isScrollEnabled = false
         optionsTableView.separatorStyle = .singleLine
         optionsTableView.separatorInset = UIEdgeInsets(top: 0, left: 16, bottom: 0, right: 16)
-        optionsTableView.register(UITableViewCell.self, forCellReuseIdentifier: "OptionCell")
         optionsTableView.translatesAutoresizingMaskIntoConstraints = false
     }
     
@@ -88,6 +91,8 @@ final class CreateTrackerViewController: UIViewController {
         cancelButton.layer.borderColor = DSColor.ypRed.cgColor
         cancelButton.layer.cornerRadius = 16
         cancelButton.translatesAutoresizingMaskIntoConstraints = false
+        
+        cancelButton.addTarget(self, action: #selector(cancelButtonTapped), for: .touchUpInside)
     }
     
     private func configureCreateButton() {
@@ -98,6 +103,8 @@ final class CreateTrackerViewController: UIViewController {
         createButton.layer.cornerRadius = 16
         createButton.isEnabled = false
         createButton.translatesAutoresizingMaskIntoConstraints = false
+        
+        createButton.addTarget(self, action: #selector(createButtonTapped), for: .touchUpInside)
     }
     
     private func setupViews() {
@@ -108,8 +115,6 @@ final class CreateTrackerViewController: UIViewController {
         
         buttonsStackView.addArrangedSubview(cancelButton)
         buttonsStackView.addArrangedSubview(createButton)
-        
-        cancelButton.addTarget(self, action: #selector(cancelButtonTapped), for: .touchUpInside)
     }
     
     private func setupHierarchy() {
@@ -125,24 +130,20 @@ final class CreateTrackerViewController: UIViewController {
     
     private func setupConstraints() {
         NSLayoutConstraint.activate([
-            // Заголовок экрана
             titleLabel.topAnchor.constraint(equalTo: view.safeAreaLayoutGuide.topAnchor, constant: 27),
             titleLabel.leadingAnchor.constraint(equalTo: view.leadingAnchor, constant: 16),
             titleLabel.trailingAnchor.constraint(equalTo: view.trailingAnchor, constant: -16),
             
-            // Текстовое поле ввода названия
             nameTextField.topAnchor.constraint(equalTo: titleLabel.bottomAnchor, constant: 38),
             nameTextField.leadingAnchor.constraint(equalTo: view.leadingAnchor, constant: 16),
             nameTextField.trailingAnchor.constraint(equalTo: view.trailingAnchor, constant: -16),
             nameTextField.heightAnchor.constraint(equalToConstant: 75),
             
-            // Таблица Категория / Расписание
             optionsTableView.topAnchor.constraint(equalTo: nameTextField.bottomAnchor, constant: 24),
             optionsTableView.leadingAnchor.constraint(equalTo: view.leadingAnchor, constant: 16),
             optionsTableView.trailingAnchor.constraint(equalTo: view.trailingAnchor, constant: -16),
-            optionsTableView.heightAnchor.constraint(equalToConstant: 150), // 2 ячейки по 75pt
+            optionsTableView.heightAnchor.constraint(equalToConstant: 150),
             
-            // Контейнер нижних кнопок
             buttonsStackView.leadingAnchor.constraint(equalTo: view.leadingAnchor, constant: 20),
             buttonsStackView.trailingAnchor.constraint(equalTo: view.trailingAnchor, constant: -20),
             buttonsStackView.bottomAnchor.constraint(equalTo: view.safeAreaLayoutGuide.bottomAnchor, constant: -16),
@@ -150,8 +151,29 @@ final class CreateTrackerViewController: UIViewController {
         ])
     }
     
+    private func validateCreateButton() {
+        let isNameEntered = !(nameTextField.text?.isEmpty ?? true)
+        let isScheduleSelected = !currentSchedule.isEmpty
+        
+        if isNameEntered && isScheduleSelected {
+            createButton.isEnabled = true
+            createButton.backgroundColor = DSColor.ypBlack
+        } else {
+            createButton.isEnabled = false
+            createButton.backgroundColor = DSColor.ypGray
+        }
+    }
+    
+    @objc private func createButtonTapped() {
+        dismiss(animated: true, completion: nil)
+    }
+    
     @objc private func cancelButtonTapped() {
         dismiss(animated: true, completion: nil)
+    }
+    
+    @objc private func editTextChanged() {
+        validateCreateButton()
     }
 }
 
@@ -163,16 +185,36 @@ extension CreateTrackerViewController: UITableViewDataSource, UITableViewDelegat
     }
     
     func tableView(_ tableView: UITableView, cellForRowAt indexPath: IndexPath) -> UITableViewCell {
-        let cell = tableView.dequeueReusableCell(withIdentifier: "OptionCell", for: indexPath)
+        let identifier = "OptionCell"
+        
+        let cell = tableView.dequeueReusableCell(withIdentifier: identifier)
+        ?? UITableViewCell(style: .subtitle, reuseIdentifier: identifier)
+        
         cell.textLabel?.text = options[indexPath.row]
         cell.textLabel?.font = .systemFont(ofSize: 17, weight: .regular)
         cell.textLabel?.textColor = .black
         cell.backgroundColor = .clear
         cell.selectionStyle = .none
         
-        // Добавление шеврона (стрелочки справа)
+        if indexPath.row == 1 {
+            if currentSchedule.count == Weekday.allCases.count {
+                cell.detailTextLabel?.text = "Каждый день"
+            } else if !currentSchedule.isEmpty {
+                let sortedDays = currentSchedule.sorted { $0.rawValue < $1.rawValue }
+                let shortNames = sortedDays.map { $0.shortLocalizedName }
+                cell.detailTextLabel?.text = shortNames.joined(separator: ", ")
+            } else {
+                cell.detailTextLabel?.text = nil
+            }
+            
+            cell.detailTextLabel?.font = .systemFont(ofSize: 17, weight: .regular)
+            cell.detailTextLabel?.textColor = .systemGray
+        } else {
+            cell.detailTextLabel?.text = nil
+        }
+        
         let disclosureImage = UIImageView(image: UIImage(systemName: "chevron.right"))
-        disclosureImage.tintColor = UIColor(red: 0.68, green: 0.69, blue: 0.71, alpha: 1.0)
+        disclosureImage.tintColor = DSColor.ypGray
         cell.accessoryView = disclosureImage
         
         return cell
@@ -186,7 +228,36 @@ extension CreateTrackerViewController: UITableViewDataSource, UITableViewDelegat
         if indexPath.row == 0 {
             // TODO: Переход на экран выбора Категории
         } else {
-            // TODO: Переход на экран настройки Расписания
+            let scheduleVC = ScheduleViewController()
+            scheduleVC.delegate = self
+            scheduleVC.selectedDays = currentSchedule
+            present(scheduleVC, animated: true, completion: nil)
         }
+    }
+}
+
+extension CreateTrackerViewController: UITextFieldDelegate {
+    
+    func textField(_ textField: UITextField, shouldChangeCharactersIn range: NSRange, replacementString string: String) -> Bool {
+        let currentText = textField.text ?? ""
+        
+        guard let textRange = Range(range, in: currentText) else {
+            return false
+        }
+        
+        let updatedText = currentText.replacingCharacters(in: textRange, with: string)
+        
+        return updatedText.count <= 38
+    }
+}
+
+extension CreateTrackerViewController: ScheduleViewControllerDelegate {
+    
+    func didUpdateSchedule(_ selectedDays: Set<Weekday>) {
+        self.currentSchedule = selectedDays
+        
+        optionsTableView.reloadData()
+        
+        validateCreateButton()
     }
 }
