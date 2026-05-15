@@ -9,6 +9,22 @@ import UIKit
 
 enum DSColor {
     
+    static var ypGreen: UIColor {
+        guard let color = UIColor(named: "YP_green") else {
+            assertionFailure("Color YP_green not found")
+            return .systemGreen
+        }
+        return color
+    }
+    
+    static var ypRed: UIColor {
+        guard let color = UIColor(named: "YP_red") else {
+            assertionFailure("Color YP_red not found")
+            return .systemRed
+        }
+        return color
+    }
+    
     static var ypBlue: UIColor {
         guard let color = UIColor(named: "YP_blue") else {
             assertionFailure("Color YP_blue not found")
@@ -57,10 +73,10 @@ enum DSColor {
         return color
     }
     
-    static var ypGreen: UIColor {
-        guard let color = UIColor(named: "YP_green") else {
-            assertionFailure("Color YP_green not found")
-            return .systemGreen
+    static var ypBackgroundGray: UIColor {
+        guard let color = UIColor(named: "YP_backgroundGray") else {
+            assertionFailure("Color YP_backgroundGray not found")
+            return .systemGray
         }
         return color
     }

@@ -26,7 +26,7 @@ final class TrackersViewController: UIViewController {
                                                           rightInset: 16,
                                                           cellSpacing: 9)
     
-    // MARK: - UI
+    // MARK: - UI Elements
     
     private let addTrackButton = UIButton(type: .custom)
     private let dateLabel = UILabel()
@@ -42,7 +42,7 @@ final class TrackersViewController: UIViewController {
         return trackerCollectionView
     }()
     
-    // MARK: - viewDidLoad
+    // MARK: - Lifecycle
     
     override func viewDidLoad() {
         super.viewDidLoad()
@@ -292,7 +292,9 @@ final class TrackersViewController: UIViewController {
     
     @objc
     private func didTapAddTrackButton() {
-        // TODO: реакция на нажатие
+        let vc = CreateTrackerViewController()
+        vc.modalPresentationStyle = .pageSheet
+        present(vc, animated: true)
     }
     
     @objc private func dateChanged(_ sender: UIDatePicker) {
@@ -424,7 +426,7 @@ extension TrackersViewController {
                     name: "Сделать зарядку",
                     color: .systemYellow,
                     emoji: "🏋️‍♀️",
-                    schedule: [.monday, .tuesday, .wednesday, .thursday, .friday, .saturday, .sunday]),
+                    schedule: [.monday, .wednesday, .thursday, .friday, .saturday, .sunday]),
             Tracker(id: UUID(),
                     name: "Покормить кота",
                     color: .systemPink,
