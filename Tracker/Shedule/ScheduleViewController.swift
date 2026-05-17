@@ -13,14 +13,16 @@ final class ScheduleViewController: UIViewController {
     
     var selectedDays: Set<Weekday> = []
     
-    private let weekdays: [Weekday] = [.monday, .tuesday, .wednesday, .thursday, .friday, .saturday, .sunday]
+    private let weekdays = Weekday.allCases
     
     // MARK: - UI Elements
+    
     private let titleLabel = UILabel()
     private let scheduleTableView = UITableView(frame: .zero, style: .plain)
     private lazy var doneButton = UIButton(type: .system)
     
     // MARK: - Lifecycle
+    
     override func viewDidLoad() {
         super.viewDidLoad()
         
@@ -28,6 +30,7 @@ final class ScheduleViewController: UIViewController {
     }
     
     // MARK: - Configure
+    
     private func configure() {
         configureTitleLabel()
         configureTableView()
@@ -95,6 +98,7 @@ final class ScheduleViewController: UIViewController {
     }
     
     // MARK: - Actions
+    
     @objc private func switchChanged(_ sender: UISwitch) {
         let weekday = weekdays[sender.tag]
         
@@ -111,12 +115,22 @@ final class ScheduleViewController: UIViewController {
     }
 }
 
-// MARK: - UITableViewDataSource & UITableViewDelegate
-extension ScheduleViewController: UITableViewDataSource, UITableViewDelegate {
+// MARK: - UITableViewDataSource
+
+extension ScheduleViewController: UITableViewDataSource {
     
     func tableView(_ tableView: UITableView, numberOfRowsInSection section: Int) -> Int {
         return weekdays.count
     }
+    
+    func tableView(_ tableView: UITableView, heightForRowAt indexPath: IndexPath) -> CGFloat {
+        return 75
+    }
+}
+
+// MARK: - UITableViewDelegate
+
+extension ScheduleViewController: UITableViewDelegate {
     
     func tableView(_ tableView: UITableView, cellForRowAt indexPath: IndexPath) -> UITableViewCell {
         let cell = tableView.dequeueReusableCell(withIdentifier: "WeekdayCell", for: indexPath)
@@ -136,9 +150,5 @@ extension ScheduleViewController: UITableViewDataSource, UITableViewDelegate {
         
         cell.accessoryView = switchView
         return cell
-    }
-    
-    func tableView(_ tableView: UITableView, heightForRowAt indexPath: IndexPath) -> CGFloat {
-        return 75
     }
 }

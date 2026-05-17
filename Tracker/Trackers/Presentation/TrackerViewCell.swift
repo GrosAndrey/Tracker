@@ -155,24 +155,16 @@ final class TrackerViewCell: UICollectionViewCell {
     
     // MARK: - Public
     
-    func configure(
-        id: UUID,
-        selectedDate: Date,
-        title: String,
-        emoji: String,
-        color: UIColor,
-        days: Int,
-        completed: Bool
-    ) {
-        trackerID = id
-        trackerDate = selectedDate
-        titleLabel.text = title
-        emojiLabel.text = emoji
+    func configure(with model: TrackerCellModel) {
+        trackerID = model.id
+        trackerDate = model.currentDay
+        titleLabel.text = model.title
+        emojiLabel.text = model.emoji
         
-        completedDays = days
-        isCompleted = completed
-        cardView.backgroundColor = color
-        completeButton.backgroundColor = color
+        completedDays = model.days
+        isCompleted = model.completed
+        cardView.backgroundColor = model.color
+        completeButton.backgroundColor = model.color
         
         updateDaysLabel()
         updateButton()
@@ -182,12 +174,27 @@ final class TrackerViewCell: UICollectionViewCell {
     
     @objc
     private func didTapCompleteButton() {
-        isCompleted.toggle()
-        guard let trackerID, let trackerDate else { return }
-        if trackerDate.startOfDay > Date().startOfDay {
-            return
-        }
+        if !canCompleteTracker() { return }
         
+        toggleTrackerCompletion()
+        updateDaysLabel()
+        updateButton()
+    }
+    
+    // MARK: - Complete tracker
+    
+    private func canCompleteTracker() -> Bool {
+        guard let trackerDate else { return false }
+        if trackerDate.startOfDay > Date().startOfDay {
+            return false
+        }
+        return true
+    }
+    
+    private func toggleTrackerCompletion() {
+        guard let trackerID, let trackerDate else { return }
+        
+        isCompleted.toggle()
         if isCompleted {
             completedDays += 1
             delegate?.completeTracker(trackerID, on: trackerDate)
@@ -195,43 +202,24 @@ final class TrackerViewCell: UICollectionViewCell {
             completedDays -= 1
             delegate?.uncompleteTracker(trackerID, on: trackerDate)
         }
-        
-        updateDaysLabel()
-        updateButton()
     }
     
     // MARK: - Updates
     
     private func updateDaysLabel() {
-        daysLabel.text = "\(completedDays) \(daysText(for: completedDays))"
+        daysLabel.text = "\(completedDays) \(completedDays.localizedDaysText)"
     }
     
     private func updateButton() {
-        if isCompleted {
-            completeButton.setImage(
-                UIImage(systemName: "checkmark"),
-                for: .normal
-            )
-            
-            completeButton.alpha = 0.3
-        } else {
-            completeButton.setImage(
-                UIImage(systemName: "plus"),
-                for: .normal
-            )
-            
-            completeButton.alpha = 1
-        }
-    }
-    
-    private func daysText(for days: Int) -> String {
-        switch days % 10 {
-        case 1:
-            return days % 100 == 11 ? "дней" : "день"
-        case 2, 3, 4:
-            return (12...14).contains(days % 100) ? "дней" : "дня"
-        default:
-            return "дней"
-        }
+        let imageName = isCompleted
+        ? "checkmark"
+        : "plus"
+        
+        completeButton.setImage(
+            UIImage(systemName: imageName),
+            for: .normal
+        )
+        
+        completeButton.alpha = isCompleted ? 0.3 : 1
     }
 }

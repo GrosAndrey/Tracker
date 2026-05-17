@@ -20,7 +20,6 @@ final class TrackersViewController: UIViewController {
     private var filteredCategories: [TrackerCategory] = []
     
     private var currentDate = Date()
-    private var selectedDate: Date?
     private var params: GeometricParams = GeometricParams(cellCount: 2,
                                                           leftInset: 16,
                                                           rightInset: 16,
@@ -190,7 +189,7 @@ final class TrackersViewController: UIViewController {
     }
     
     private func setupConstraints() {
-        addTrackButton.topAnchor.constraint(equalTo: view.topAnchor, constant: 52).isActive = true
+        addTrackButton.topAnchor.constraint(equalTo: view.safeAreaLayoutGuide.topAnchor, constant: 0).isActive = true
         addTrackButton.leadingAnchor.constraint(equalTo: view.leadingAnchor, constant: 6).isActive = true
         addTrackButton.widthAnchor.constraint(equalToConstant: 42).isActive = true
         addTrackButton.heightAnchor.constraint(equalToConstant: 42).isActive = true
@@ -309,7 +308,7 @@ final class TrackersViewController: UIViewController {
     
     @objc private func dateChanged(_ sender: UIDatePicker) {
         dateLabel.text = dateFormatter.string(from: sender.date)
-        selectedDate = sender.date
+        currentDate = sender.date
         
         updateTrackersForDate(date: sender.date)
         reoladCollectionView()
@@ -336,18 +335,20 @@ extension TrackersViewController: UICollectionViewDataSource {
         }
         
         let tracker = filteredCategories[indexPath.section].trackers[indexPath.row]
-        let date = selectedDate ?? currentDate
         
         cell.delegate = self
-        cell.configure(
+        
+        let trackerCell = TrackerCellModel(
             id: tracker.id,
-            selectedDate: date.startOfDay,
+            currentDay: currentDate.startOfDay,
             title: tracker.name,
             emoji: tracker.emoji,
             color: tracker.color,
             days: completedDaysCount(for: tracker.id),
-            completed: isTrackerCompleted(id: tracker.id, on: date)
+            completed: isTrackerCompleted(id: tracker.id, on: currentDate)
         )
+        
+        cell.configure(with: trackerCell)
         return cell
     }
     
@@ -427,13 +428,12 @@ extension TrackersViewController: CreateTrackerViewControllerDelegate {
                                  schedule: selectedDays)
         let isNewCategory = addTrackerWithCategory(newTracker, categoryTitle: categoryTitle)
         
-        let date = selectedDate ?? currentDate
-        guard let currentWeekday = Calendar.current.getWeekday(from: date) else { return }
+        guard let currentWeekday = Calendar.current.getWeekday(from: currentDate) else { return }
         if !selectedDays.contains(currentWeekday) {
             return
         }
         
-        filteredCategories = filteredTrackers(for: date)
+        filteredCategories = filteredTrackers(for: currentDate)
         if isNewCategory {
             let categoryIndex = filteredCategories.count - 1
             
