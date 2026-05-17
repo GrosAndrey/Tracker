@@ -86,7 +86,7 @@ final class TrackersViewController: UIViewController {
         dateLabel.backgroundColor = DSColor.ypLigtGray
         dateLabel.font = fontRegular
         dateLabel.textColor = DSColor.ypBlack
-        dateLabel.textAlignment = .right
+        dateLabel.textAlignment = .center
         dateLabel.layer.cornerRadius = 8
         dateLabel.layer.masksToBounds = true
         dateLabel.text = dateFormatter.string(from: currentDate)
@@ -293,6 +293,7 @@ final class TrackersViewController: UIViewController {
     @objc
     private func didTapAddTrackButton() {
         let vc = CreateTrackerViewController()
+        vc.delegate = self
         vc.modalPresentationStyle = .pageSheet
         present(vc, animated: true)
     }
@@ -412,6 +413,20 @@ extension TrackersViewController: TrackersViewControllerDelegate {
     }
 }
 
+extension TrackersViewController: CreateTrackerViewControllerDelegate {
+    func didUpdateTracker(_ trackerName: String, _ categoryTitle: String, _ selectedDays: Set<Weekday>) {
+        let newTracker = Tracker(id: UUID(),
+                                 name: trackerName,
+                                 color: .systemGreen,
+                                 emoji: "🌱",
+                                 schedule: selectedDays)
+        addTrackerWithCategory(newTracker, categoryTitle: categoryTitle)
+        
+        let date = selectedDate ?? currentDate
+        updateTrackersForDate(date: date)
+    }
+}
+
 // MARK: - Mok data
 
 extension TrackersViewController {
@@ -440,6 +455,5 @@ extension TrackersViewController {
             TrackerCategory(title: "Радостные мелочи",
                             trackers: [trackers[1], trackers[2]])
         ])
-        
     }
 }

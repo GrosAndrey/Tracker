@@ -8,6 +8,7 @@
 import UIKit
 
 final class CreateTrackerViewController: UIViewController {
+    weak var delegate: CreateTrackerViewControllerDelegate?
     
     // MARK: - UI Elements
     private let titleLabel = UILabel()
@@ -165,6 +166,8 @@ final class CreateTrackerViewController: UIViewController {
     }
     
     @objc private func createButtonTapped() {
+        let categoryTitle = "Тестовая категория"
+        delegate?.didUpdateTracker(nameTextField.text ?? "", categoryTitle, currentSchedule)
         dismiss(animated: true, completion: nil)
     }
     
@@ -246,7 +249,6 @@ extension CreateTrackerViewController: UITextFieldDelegate {
         }
         
         let updatedText = currentText.replacingCharacters(in: textRange, with: string)
-        
         return updatedText.count <= 38
     }
 }
@@ -257,7 +259,6 @@ extension CreateTrackerViewController: ScheduleViewControllerDelegate {
         self.currentSchedule = selectedDays
         
         optionsTableView.reloadData()
-        
         validateCreateButton()
     }
 }

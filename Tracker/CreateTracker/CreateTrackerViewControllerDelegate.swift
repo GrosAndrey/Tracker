@@ -8,5 +8,5 @@
 import Foundation
 
 protocol CreateTrackerViewControllerDelegate: AnyObject {
-    func didUpdateTracker(_ selectedDays: Set<Weekday>)
+    func didUpdateTracker(_ trackerName: String, _ categoryTitle: String, _ selectedDays: Set<Weekday>)
 }
