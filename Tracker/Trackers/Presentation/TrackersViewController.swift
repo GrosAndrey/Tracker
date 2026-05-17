@@ -26,6 +26,12 @@ final class TrackersViewController: UIViewController {
                                                           rightInset: 16,
                                                           cellSpacing: 9)
     
+    struct TrackerUpdateResult {
+        let categoryIndex: Int
+        let trackerIndex: Int
+        let isNewCategory: Bool
+    }
+    
     // MARK: - UI Elements
     
     private let addTrackButton = UIButton(type: .custom)
@@ -265,7 +271,8 @@ final class TrackersViewController: UIViewController {
         }
     }
     
-    func addTrackerWithCategory(_ tracker: Tracker, categoryTitle: String) {
+    func addTrackerWithCategory(_ tracker: Tracker, categoryTitle: String) -> Bool {
+        var isNewCategory = false
         if categories.contains(where: { $0.title == categoryTitle }) {
             addTracker(tracker, to: categoryTitle)
         } else {
@@ -274,7 +281,9 @@ final class TrackersViewController: UIViewController {
                 trackers: [tracker]
             )
             categories = categories + [newCategory]
+            isNewCategory = true
         }
+        return isNewCategory
     }
     
     func completedDaysCount(for id: UUID) -> Int {
@@ -342,11 +351,7 @@ extension TrackersViewController: UICollectionViewDataSource {
         return cell
     }
     
-    func collectionView(
-        _ collectionView: UICollectionView,
-        viewForSupplementaryElementOfKind kind: String,
-        at indexPath: IndexPath
-    ) -> UICollectionReusableView {
+    func collectionView(_ collectionView: UICollectionView, viewForSupplementaryElementOfKind kind: String, at indexPath: IndexPath) -> UICollectionReusableView {
         guard kind == UICollectionView.elementKindSectionHeader else {
             return UICollectionReusableView()
         }
@@ -420,14 +425,37 @@ extension TrackersViewController: CreateTrackerViewControllerDelegate {
                                  color: .systemGreen,
                                  emoji: "🌱",
                                  schedule: selectedDays)
-        addTrackerWithCategory(newTracker, categoryTitle: categoryTitle)
+        let isNewCategory = addTrackerWithCategory(newTracker, categoryTitle: categoryTitle)
         
         let date = selectedDate ?? currentDate
-        updateTrackersForDate(date: date)
+        guard let currentWeekday = Calendar.current.getWeekday(from: date) else { return }
+        if !selectedDays.contains(currentWeekday) {
+            return
+        }
+        
+        filteredCategories = filteredTrackers(for: date)
+        if isNewCategory {
+            let categoryIndex = filteredCategories.count - 1
+            
+            trackerCollectionView.performBatchUpdates {
+                trackerCollectionView.insertSections(IndexSet(integer: categoryIndex))
+            }
+        } else {
+            guard let categoryIndex = filteredCategories.firstIndex(where: {
+                $0.title == categoryTitle
+            }) else { return }
+            
+            let itemIndex = filteredCategories[categoryIndex].trackers.count - 1
+            let indexPath = IndexPath(item: itemIndex, section: categoryIndex)
+            
+            trackerCollectionView.performBatchUpdates {
+                trackerCollectionView.insertItems(at: [indexPath])
+            }
+        }
     }
 }
 
-// MARK: - Mok data
+// MARK: - Mock data
 
 extension TrackersViewController {
     func mockData() {
