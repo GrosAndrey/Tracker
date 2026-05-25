@@ -18,9 +18,20 @@ final class CreateTrackerViewController: UIViewController {
     private let cancelButton = UIButton(type: .system)
     private let createButton = UIButton(type: .system)
     
+    // MARK: - Data
+    private let emojis = ["🙂", "😻", "🌺", "🐶", "❤️", "😱",
+                          "😇", "😡", "🥶", "🤔", "🙌", "🍔",
+                          "🥦", "🏓", "🥇", "🎸", "🏝", "😪"]
+
+    private let colors: [UIColor] = [
+        DSColor.ypSelection1, DSColor.ypSelection2, DSColor.ypSelection3, DSColor.ypSelection4, DSColor.ypSelection5, DSColor.ypSelection6,
+        DSColor.ypSelection7, DSColor.ypSelection8, DSColor.ypSelection9, DSColor.ypSelection10, DSColor.ypSelection11, DSColor.ypSelection12,
+        DSColor.ypSelection13, DSColor.ypSelection14, DSColor.ypSelection15, DSColor.ypSelection16, DSColor.ypSelection17, DSColor.ypSelection18]
+    
     // MARK: - Properties
     private let options = ["Категория", "Расписание"]
     private var currentSchedule: Set<Weekday> = []
+    
     
     // MARK: - Lifecycle
     override func viewDidLoad() {
