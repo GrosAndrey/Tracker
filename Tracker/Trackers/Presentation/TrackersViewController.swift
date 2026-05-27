@@ -420,11 +420,11 @@ extension TrackersViewController: TrackersViewControllerDelegate {
 }
 
 extension TrackersViewController: CreateTrackerViewControllerDelegate {
-    func didUpdateTracker(_ trackerName: String, _ categoryTitle: String, _ selectedDays: Set<Weekday>) {
+    func didUpdateTracker(_ trackerName: String, _ categoryTitle: String, _ selectedDays: Set<Weekday>, _ emoji: String, _ color: UIColor) {
         let newTracker = Tracker(id: UUID(),
                                  name: trackerName,
-                                 color: .systemGreen,
-                                 emoji: "🌱",
+                                 color: color,
+                                 emoji: emoji,
                                  schedule: selectedDays)
         let isNewCategory = addTrackerWithCategory(newTracker, categoryTitle: categoryTitle)
         
